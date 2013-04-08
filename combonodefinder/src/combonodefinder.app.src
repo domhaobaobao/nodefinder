@@ -6,5 +6,5 @@
               {applications,[kernel,stdlib,inets]},
               {env,[]},
               {mod,{combonodefinder,[]}},
-              {included_applications,[ec2nodefinder,nodefinder]}]}
+              {included_applications,[ec2nodefinder, ec2erlcloudnodefinder, nodefinder]}]}
 .

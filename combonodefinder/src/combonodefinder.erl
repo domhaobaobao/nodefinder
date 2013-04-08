@@ -68,7 +68,7 @@ stop (State) ->
 
 %% @hidden
 
-stop_ec2_mode(Type, Args) ->
+stop_ec2_mode(State) ->
   case application:get_env (combonodefinder, use_erlcloud) of
     true -> ec2nodefinder:stop (State);
 	false -> ec2erlcloudnodefinder:stop (State)
