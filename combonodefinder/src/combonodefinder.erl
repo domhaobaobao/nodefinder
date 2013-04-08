@@ -38,8 +38,19 @@ start () ->
 
 start (Type, Args) ->
   case is_ec2_host () of
-    true -> ec2nodefinder:start (Type, Args);
+    true -> start_ec2_mode(Type, Args);
     false -> nodefinder:start (Type, Args)
+  end.
+
+%% @hidden
+
+start_ec2_mode(Type, Args) ->
+  case application:get_env (combonodefinder, use_erlcloud) of
+    true -> 
+		ec2nodefinder:start (Type, Args);
+	false -> 
+		application:start (erlcloud), 
+		ec2erlcloudnodefinder:start (Type, Args)
   end.
 
 %% @hidden
@@ -51,8 +62,16 @@ stop () ->
 
 stop (State) ->
   case is_ec2_host () of
-    true -> ec2nodefinder:stop (State);
+    true -> stop_ec2_mode (State);
     false -> nodefinder:stop (State)
+  end.
+
+%% @hidden
+
+stop_ec2_mode(Type, Args) ->
+  case application:get_env (combonodefinder, use_erlcloud) of
+    true -> ec2nodefinder:stop (State);
+	false -> ec2erlcloudnodefinder:stop (State)
   end.
 
 %-=====================================================================-
