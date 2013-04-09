@@ -1,7 +1,6 @@
 # BOF
 .project
 .svn
-*/ebin/*
-*/deps/*
+ebin/*
 deps/*
 # EOF

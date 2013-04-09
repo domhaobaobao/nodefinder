@@ -1,1 +1,0 @@
-ec2nodefinder is a node discovery service based upon ec2-describe-instances. ec2ercloudnodefinder uses Erlcloud to make the call and parse the response removes the requirement for ec2-api-tools to be installed
