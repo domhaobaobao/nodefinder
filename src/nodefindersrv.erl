@@ -6,7 +6,7 @@
 
 -module (nodefindersrv).
 -behaviour (gen_server).
--export ([ start_link/2, start_link/3, discover/0 ]).
+-export ([ start_link/4, discover/0 ]).
 -export ([ init/1,
            handle_call/3,
            handle_cast/2,
@@ -17,17 +17,14 @@
 -oldrecord (state).
 
 -record (state, { socket, addr, port }).
--record (statev2, { sendsock, recvsock, addr, port }).
+-record (statev2, { sendsock, recvsock, addr, port, multicast_addr, ttl }).
 
 %-=====================================================================-
 %-                                Public                               -
 %-=====================================================================-
 
-start_link (Addr, Port) ->
-  start_link (Addr, Port, 1).
-
-start_link (Addr, Port, Ttl) ->
-  gen_server:start_link ({ local, ?MODULE }, ?MODULE, [ Addr, Port, Ttl ], []).
+start_link (Addr, Port, Ttl, MulticastIntAddr) ->
+  gen_server:start_link ({ local, ?MODULE }, ?MODULE, [ Addr, Port, Ttl, MulticastIntAddr ], []).
 
 discover () ->
   gen_server:call (?MODULE, discover).
@@ -36,12 +33,12 @@ discover () ->
 %-                         gen_server callbacks                        -
 %-=====================================================================-
 
-init ([ Addr, Port, Ttl ]) ->
+init ([ Addr, Port, Ttl, MulticastIntAddr ]) ->
   process_flag (trap_exit, true),
 
   Opts = [ { active, true },
            { ip, Addr },
-           { add_membership, { Addr, { 0, 0, 0, 0 } } },
+           { add_membership, { Addr, MulticastIntAddr } },
            { multicast_loop, true },
            { reuseaddr, true },
            list ],
@@ -49,9 +46,11 @@ init ([ Addr, Port, Ttl ]) ->
   { ok, RecvSocket } = gen_udp:open (Port, Opts),
 
   { ok, discover (#statev2{ recvsock = RecvSocket,
-                            sendsock = send_socket (Ttl),
+                            sendsock = send_socket (Ttl, MulticastIntAddr),
                             addr = Addr,
-                            port = Port }) }.
+                            port = Port,
+                            multicast_addr = MulticastIntAddr,
+                            ttl = Ttl}) }.
 
 handle_call (discover, _From, State) -> { reply, ok, discover (State) };
 handle_call (_Request, _From, State) -> { noreply, State }.
@@ -71,7 +70,7 @@ terminate (_Reason, State = #statev2{}) ->
 
 code_change (_OldVsn, State = #state{}, _Extra) -> 
   NewState = #statev2{ recvsock = State#state.socket,
-                       sendsock = send_socket (1),
+                       sendsock = send_socket (1, {0,0,0,0}),
                        addr = State#state.addr,
                        port = State#state.port },
   { ok, NewState };
@@ -141,8 +140,8 @@ process_packet (_Packet, _IP, _InPortNo, State) ->
 seconds () ->
   calendar:datetime_to_gregorian_seconds (calendar:universal_time ()).
 
-send_socket (Ttl) ->
-  SendOpts = [ { ip, { 0, 0, 0, 0 } },
+send_socket (Ttl, MulticastIntAddr) ->
+  SendOpts = [ { ip, MulticastIntAddr },
                { multicast_ttl, Ttl }, 
                { multicast_loop, true } ],
 

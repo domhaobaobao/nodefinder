@@ -34,7 +34,8 @@ start (_Type, _Args) ->
   { ok, Addr } = application:get_env (nodefinder, addr),
   { ok, Port } = application:get_env (nodefinder, port),
   { ok, Ttl } = application:get_env (nodefinder, multicast_ttl),
-  nodefindersup:start_link (Addr, Port, Ttl).
+  MulticastIntAddr = application:get_env (nodefinder, multicast_interface, { 0, 0, 0, 0 }),
+  nodefindersup:start_link (Addr, Port, Ttl, MulticastIntAddr).
 
 %% @hidden
 
